@@ -224,15 +224,15 @@ async fn hex(
 #[poise::command(slash_command, track_edits)]
 async fn help(ctx: Context<'_, Data, Error>) -> Result<()> {
     let embed = CreateEmbed::default()
-        .title("GitHub Source Code")
-        .url("https://github.com/ShayBox/Hex")
-        .description("Hex allows server members to change their name color")
+        .title("Hexbot Commands")
+        //.url("")
+        .description("Hex allows server members to change their name to any custom color")
         .timestamp(Timestamp::now())
-        .author(CreateEmbedAuthor::new("").name("Shayne Hartford (ShayBox)").url("https://shaybox.com").icon_url("https://avatars1.githubusercontent.com/u/9505196"))
+        //.author(CreateEmbedAuthor::new("").name("Shayne Hartford (ShayBox)").url("https://shaybox.com").icon_url("https://avatars1.githubusercontent.com/u/9505196"))
         .field("Commands", "", false)
-        .field("Hex", "Change your name color", true)
-        .field("Help", "Information about hex", true)
-        .footer(CreateEmbedFooter::new("").text("Hex").icon_url("https://cdn.discordapp.com/avatars/600436180864991233/e16826d0d7ab4a74e703a72458e37757"));
+        .field("`\\help`", "See this message about hex bot usage", false)
+        .field("`\\hex` <HEX, RGB, HSL, HSV, HWB, LAB, LCH>", "Change your name color to the input hex code. Run without arguments to get a random color.", false)
+        .footer(CreateEmbedFooter::new("").text("https://github.com/kelseaboyd/Hex"));
 
     let builder = CreateReply::default().embed(embed).ephemeral(true);
 
