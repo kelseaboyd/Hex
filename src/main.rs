@@ -15,8 +15,6 @@ use poise::{
         CreateActionRow,
         CreateButton,
         CreateEmbed,
-        //CreateEmbedAuthor,
-        //CreateEmbedFooter,
         CreateInteractionResponse as CIR,
         EditRole,
         GatewayIntents,
@@ -30,7 +28,6 @@ use poise::{
     FrameworkOptions,
 };
 #[cfg(debug_assertions)]
-//use poise::{samples::register_in_guild, serenity_prelude::GuildId};
 use random_color::RandomColor;
 use tracing::Level;
 
@@ -45,13 +42,12 @@ async fn main() -> Result<()> {
 
     let framework = Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![hex(), help()],
+            commands: vec![hex(), help(), decolor()],
             ..Default::default()
         })
         .setup(|ctx, ready, framework| {
             Box::pin(async move {
                 #[cfg(debug_assertions)]
-                //let guild_id = GuildId::new(966444310688047104);
                 let commands = &framework.options().commands;
                 let shard = ready.shard.expect("start_autosharded");
 
@@ -64,7 +60,6 @@ async fn main() -> Result<()> {
                 );
 
                 #[cfg(debug_assertions)]
-                //register_in_guild(ctx, commands, guild_id).await?;
                 register_globally(ctx, commands).await?;
 
                 ctx.set_presence(
@@ -89,10 +84,6 @@ async fn main() -> Result<()> {
         .await?;
 
     client.start_autosharded().await?;
-
-    // if let Err(why) = client.start_autosharded().await {
-    //     println!("Error with client: {:?}", why);
-    // }
 
     Ok(())
 }
@@ -198,7 +189,6 @@ async fn hex(
         .map_or(0, |role| role.position /* Removed: - 1 */);
 
     let builder = EditRole::new()
-        // .name(format!("USER-{}", author.user.id))
         .name(format!("{}", author.user.name))
         .colour(color.to_rgb8_tuple())
         .hoist(false)
@@ -213,8 +203,6 @@ async fn hex(
         .into_iter()
         .find(|(_, role)| role.name == format!("{}", author.user.name))
     {
-        // println!("{}",position);
-        // println!("{:#?}",role.colour);
         role.edit(ctx, builder).await?;
         author.add_role(ctx, role.id).await?;
     } else {
@@ -232,14 +220,12 @@ async fn hex(
 async fn help(ctx: Context<'_, Data, Error>) -> Result<()> {
     let embed = CreateEmbed::default()
         .title("Hexbot Help")
-        //.url("")
         .description("Hexbot allows server members to change their name to any custom color. Tool to pick a color: https://htmlcolorcodes.com/color-picker/")
         .timestamp(Timestamp::now())
-        //.author(CreateEmbedAuthor::new("").name("Shayne Hartford (ShayBox)").url("https://shaybox.com").icon_url("https://avatars1.githubusercontent.com/u/9505196"))
         .field("Commands", "", false)
         .field("`\\help`", "Get this message about hexbot usage.", false)
-        .field("`\\hex <HEX, RGB, HSL, HSV, HWB, LAB, LCH>`", "Change your name color to the input color name or code (ex: pink, #880808). Run without inputs to get a random color.", false);
-        //.footer(CreateEmbedFooter::new("").text("https://github.com/kelseaboyd/Hex"));
+        .field("`\\hex <HEX, RGB, HSL, HSV, HWB, LAB, LCH>`", "Change your name color to the input color name or code (ex: pink, #880808). Run without inputs to get a random color.", false)
+        .field("`\\decolor`", "Delete your custom color role.", false);
 
     let builder = CreateReply::default().embed(embed).ephemeral(true);
 
@@ -248,9 +234,38 @@ async fn help(ctx: Context<'_, Data, Error>) -> Result<()> {
     Ok(())
 }
 
-// /// Delete your color role
-// #[poise::command(slash_command, track_edits)]
-// async fn clear(ctx: Context<'_, Data, Error>) -> Result<()> {
+/// Delete your color role
+#[poise::command(slash_command, track_edits)]
+async fn decolor(ctx: Context<'_, Data, Error>) -> Result<()> {
 
-//     Ok(())
-// }
+    let guild = match ctx.guild() {
+        Some(guild) => guild.clone(),
+        None => return Ok(()),
+    };
+
+    let Some(author) = ctx.author_member().await else {
+        return Ok(());
+    };
+
+    if let Some((_id, mut role)) = guild
+        .roles
+        .clone()
+        .into_iter()
+        .find(|(_, role)| role.name == format!("{}", author.user.name))
+    {
+        author.remove_role(ctx, role.id).await?;
+        role.delete(ctx).await?;
+        let embed = CreateEmbed::default()
+            .title("Custom color role deleted.");
+        let builder = CreateReply::default().embed(embed).ephemeral(true);
+        ctx.send(builder).await?;
+    } else {
+        println!("No color role found for {}", author.user.name);
+        let embed = CreateEmbed::default()
+            .title("No custom color role found.");
+        let builder = CreateReply::default().embed(embed).ephemeral(true);
+        ctx.send(builder).await?;
+    }
+
+    Ok(())
+}
